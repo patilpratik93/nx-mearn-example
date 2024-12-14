@@ -1,0 +1,72 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'apps/user-portal/**'
+      - 'apps/admin-portal/**'
+      - 'libs/**'
+
+jobs:
+  deploy-user-portal:
+    name: Deploy User Portal
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'apps/user-portal') || contains(github.event.head_commit.modified, 'libs')
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build User Portal
+        run: npx nx build user-portal --prod
+      
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './dist/apps/user-portal'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy User Portal from GitHub Actions"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_USER_PORTAL }}
+
+  deploy-admin-portal:
+    name: Deploy Admin Portal
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'apps/admin-portal') || contains(github.event.head_commit.modified, 'libs')
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build Admin Portal
+        run: npx nx build admin-portal --prod
+      
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './dist/apps/admin-portal'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy Admin Portal from GitHub Actions"
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_ADMIN_PORTAL }}

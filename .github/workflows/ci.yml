@@ -1,4 +1,5 @@
 name: CI
+
 on:
   push:
     branches: [ main ]
@@ -7,18 +8,36 @@ on:
 
 jobs:
   main:
+    name: Nx Cloud - Main Job
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+        
+      # Nx Cloud authentication
+      - name: Initialize Nx Cloud
+        run: npx nx-cloud start-ci-run
+
+      # Run parallel jobs
+      - name: Run lint
+        run: npx nx affected --target=lint --parallel=3
       
-      - run: npm ci
+      - name: Run tests
+        run: npx nx affected --target=test --parallel=3
       
-      - run: npx nx affected -t lint --parallel=3
-      - run: npx nx affected -t test --parallel=3
-      - run: npx nx affected -t build --parallel=3
+      - name: Run build
+        run: npx nx affected --target=build --parallel=3
+
+      - name: Stop Nx Cloud agents
+        run: npx nx-cloud stop-all-agents
+        if: ${{ always() }}
